@@ -33,7 +33,6 @@ class MovieListAPIView(APIView):
                             status=status.HTTP_400_BAD_REQUEST)
 
 
-
 # --------------------------------------------------------------------------
 # ------------------------- using api_view decorator -----------------------
 # --------------------------------------------------------------------------
@@ -56,61 +55,143 @@ class MovieListAPIView(APIView):
 #             return Response(serializer.errors)
 
 
-@api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
-def get_movie_details(request, pk):
-    if request.method == 'GET':
-        if pk:
+
+
+# --------------------------------------------------------------------------
+# ------------------ using APIView class based view decorator --------------
+# --------------------------------------------------------------------------
+        
+class MovieDetailsAPIView(APIView):
+    def get(self, request, id):
+        if id:
             try:
-                movie = Movie.objects.get(pk=pk)
+                movie = Movie.objects.get(pk=id)
                 serializer = MovieSerializer(movie)
 
-                return Response({'data': serializer.data, 'msg': 'request successfully processed.'}, status=status.HTTP_200_OK)
+                return Response({'data': serializer.data, 'status':'success', 'msg': 'request processed.'}, status=status.HTTP_200_OK)
             except Exception as e:
-                return Response({'error':f"No records found with id {pk} to fetch the movie details."}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'status':'failed', 'msg': f'Error. Unable to fetch record with id {id}. {e}'}, 
+                                status=status.HTTP_400_BAD_REQUEST)
             
         else:
-            return Response({'error': f'No record found with id {pk} to fetch the details.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'msg':f'Error. Unable to find record with id {id}'}, status=status.HTTP_404_NOT_FOUND)
 
-    if request.method == 'PUT':
-        if pk:
+
+    def put(self, request, id):
+        if id:
             try:
-                movie = Movie.objects.get(pk=pk)
+                movie = Movie.objects.get(pk=id)
                 serializer = MovieSerializer(instance=movie, data=request.data)
-
+                
                 if serializer.is_valid():
                     serializer.save()
-                    return Response({'data': serializer.data, 'msg': 'request successfully processed.'}, status=status.HTTP_200_OK)
+                    return Response({'data': serializer.data, 'status': 'success', 'msg': 'request processed.'}, 
+                                    status=status.HTTP_200_OK)
                 else:
-                    return Response(serializer.errors)
+                    return Response({'status':'failed', 'msg': f'Error. serializer validation failed. {serializer.error_messages}'}, 
+                                status=status.HTTP_304_NOT_MODIFIED)
+                
             except Exception as e:
-                return Response({'error': f'Error while updating record with id {pk} {e}'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'status':'failed', 'msg': f'Error. Unable to update record with id {id}. {e}'}, 
+                                status=status.HTTP_304_NOT_MODIFIED)
         else:
-            return Response({'error': f'No record found with id {pk} to update the record.'}, status=status.HTTP_404_NOT_FOUND)
-
-    if request.method == 'PATCH':
-        if pk:
-            try:
-                movie = Movie.objects.get(pk=pk)
-                serializer = MovieSerializer(instance=movie, data=request.data, partial=True)
-
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data, status=status.HTTP_200_OK)
-                else:
-                    return Response(serializer.errors)
-            except Exception as e:
-                return Response({'error': f'Error while updating record with id {pk} {e}'})
-        else:
-            return Response({'error': f'No record found with id {pk} to update the record.'})
+            return Response({'msg':f'Error. Unable to find record with id {id}'}, status=status.HTTP_404_NOT_FOUND)
         
-    if request.method == 'DELETE':
-        if pk:
+
+    def patch(self, request, id):
+            if id:
+                try:
+                    movie = Movie.objects.get(pk=id)
+                    serializer = MovieSerializer(instance=movie, data=request.data, partial=True)
+                    
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response({'data': serializer.data, 'status': 'success', 'msg': 'request processed.'}, 
+                                        status=status.HTTP_206_PARTIAL_CONTENT)
+                    else:
+                        return Response({'status':'failed', 'msg': f'Error. serializer validation failed. {serializer.error_messages}'}, 
+                                    status=status.HTTP_304_NOT_MODIFIED)
+                    
+                except Exception as e:
+                    return Response({'status':'failed', 'msg': f'Error. Unable to update record with id {id}. {e}'}, 
+                                    status=status.HTTP_304_NOT_MODIFIED)
+            else:
+                return Response({'msg':f'Error. Unable to find record with id {id}'}, status=status.HTTP_404_NOT_FOUND)
+            
+    def delete(self, request, id):
+        if id:
             try:
-                movie = Movie.objects.get(pk=pk)
+                movie = Movie.objects.get(pk=id)
                 movie.delete()
             
             except Exception as e:
-                return Response({'error': f'Error while deleting record with id {pk}. {e}'}, status=status.HTTP_204_NO_CONTENT)
+                return Response({'error': f'Error while deleting record with id {id}. {e}'}, status=status.HTTP_204_NO_CONTENT)
         else:
-            return Response({'error': f'No record found with id {pk} to update the record.'}, 
+            return Response({'error': f'No record found with id {id} to update the record.'}, 
                             status=status.HTTP_404_NOT_FOUND)
+
+
+        
+
+# --------------------------------------------------------------------------
+# ------------------------- using api_view decorator -----------------------
+# --------------------------------------------------------------------------
+
+# @api_view(['GET', 'PUT', 'PATCH', 'DELETE'])
+# def get_movie_details(request, pk):
+#     if request.method == 'GET':
+#         if pk:
+#             try:
+#                 movie = Movie.objects.get(pk=pk)
+#                 serializer = MovieSerializer(movie)
+
+#                 return Response({'data': serializer.data, 'msg': 'request successfully processed.'}, status=status.HTTP_200_OK)
+#             except Exception as e:
+#                 return Response({'error':f"No records found with id {pk} to fetch the movie details."}, status=status.HTTP_404_NOT_FOUND)
+            
+#         else:
+#             return Response({'error': f'No record found with id {pk} to fetch the details.'}, status=status.HTTP_404_NOT_FOUND)
+
+#     if request.method == 'PUT':
+#         if pk:
+#             try:
+#                 movie = Movie.objects.get(pk=pk)
+#                 serializer = MovieSerializer(instance=movie, data=request.data)
+
+#                 if serializer.is_valid():
+#                     serializer.save()
+#                     return Response({'data': serializer.data, 'msg': 'request successfully processed.'}, status=status.HTTP_200_OK)
+#                 else:
+#                     return Response(serializer.errors)
+#             except Exception as e:
+#                 return Response({'error': f'Error while updating record with id {pk} {e}'}, status=status.HTTP_400_BAD_REQUEST)
+#         else:
+#             return Response({'error': f'No record found with id {pk} to update the record.'}, status=status.HTTP_404_NOT_FOUND)
+
+#     if request.method == 'PATCH':
+#         if pk:
+#             try:
+#                 movie = Movie.objects.get(pk=pk)
+#                 serializer = MovieSerializer(instance=movie, data=request.data, partial=True)
+
+#                 if serializer.is_valid():
+#                     serializer.save()
+#                     return Response(serializer.data, status=status.HTTP_200_OK)
+#                 else:
+#                     return Response(serializer.errors)
+#             except Exception as e:
+#                 return Response({'error': f'Error while updating record with id {pk} {e}'})
+#         else:
+#             return Response({'error': f'No record found with id {pk} to update the record.'})
+        
+#     if request.method == 'DELETE':
+#         if pk:
+#             try:
+#                 movie = Movie.objects.get(pk=pk)
+#                 movie.delete()
+            
+#             except Exception as e:
+#                 return Response({'error': f'Error while deleting record with id {pk}. {e}'}, status=status.HTTP_204_NO_CONTENT)
+#         else:
+#             return Response({'error': f'No record found with id {pk} to update the record.'}, 
+#                             status=status.HTTP_404_NOT_FOUND)

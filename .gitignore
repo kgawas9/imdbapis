@@ -1,3 +1,5 @@
 /envimdbmovies
 /db.sqlite3
 /watchlist/views.py
+__pycache__/
+*.pyc
